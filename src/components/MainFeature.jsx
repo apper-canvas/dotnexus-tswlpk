@@ -10,13 +10,16 @@ const MainFeature = () => {
   const InfoIcon = getIcon('Info');
   const CheckIcon = getIcon('Check');
   const GripIcon = getIcon('Grip');
+  const UserPlusIcon = getIcon('UserPlus');
+  const UserMinusIcon = getIcon('UserMinus');
 
   // Game state
   const [gridSize, setGridSize] = useState(4);
   const [showSettings, setShowSettings] = useState(false);
   const [players, setPlayers] = useState([
-    { id: 1, name: "Player 1", color: "primary", score: 0 },
-    { id: 2, name: "Player 2", color: "secondary", score: 0 }
+    { id: 1, name: "Player 1", color: "primary", colorClass: "primary", score: 0 },
+    { id: 2, name: "Player 2", color: "secondary", colorClass: "secondary", score: 0 }
+
   ]);
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [completedLines, setCompletedLines] = useState([]);
@@ -87,6 +90,21 @@ const MainFeature = () => {
   const [lines, setLines] = useState(generateLines(gridSize));
   const [squares, setSquares] = useState(generateSquares(gridSize));
 
+  // Player color mapping
+  const playerColors = [
+    { id: 1, color: "primary", colorClass: "primary" },
+    { id: 2, color: "secondary", colorClass: "secondary" },
+    { id: 3, color: "accent", colorClass: "accent" },
+    { id: 4, color: "emerald-500", colorClass: "emerald-500" },
+    { id: 5, color: "violet-500", colorClass: "violet-500" },
+    { id: 6, color: "rose-500", colorClass: "rose-500" }
+  ];
+
+  // Get next available player color
+  const getNextPlayerColor = (index) => {
+    return playerColors[index % playerColors.length];
+  };
+
   // Reset game
   const resetGame = () => {
     setDots(generateGrid(gridSize));
@@ -94,10 +112,13 @@ const MainFeature = () => {
     setSquares(generateSquares(gridSize));
     setCompletedLines([]);
     setCompletedSquares([]);
-    setPlayers([
-      { id: 1, name: "Player 1", color: "primary", score: 0 },
-      { id: 2, name: "Player 2", color: "secondary", score: 0 }
-    ]);
+    
+    // Reset scores but keep player settings
+    setPlayers(players.map(player => ({
+      ...player,
+      score: 0
+    })));
+    
     setCurrentPlayer(1);
     setGameOver(false);
     toast.success("New game started!");
@@ -168,7 +189,12 @@ const MainFeature = () => {
       }
     } else if (!squareCompleted) {
       // Switch player only if no square was completed
-      setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+      // Find the next player in the cycle
+      const currentPlayerIndex = players.findIndex(p => p.id === currentPlayer);
+      const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+      const nextPlayer = players[nextPlayerIndex].id;
+      
+      setCurrentPlayer(nextPlayer);
     }
   };
 
@@ -176,6 +202,39 @@ const MainFeature = () => {
   const applySettings = () => {
     setShowSettings(false);
     resetGame();
+  };
+
+  // Add a new player
+  const addPlayer = () => {
+    if (players.length >= 6) {
+      toast.warning("Maximum 6 players allowed!");
+      return;
+    }
+    
+    const newPlayerId = players.length + 1;
+    const playerColor = getNextPlayerColor(newPlayerId - 1);
+    
+    setPlayers([
+      ...players,
+      { 
+        id: newPlayerId, 
+        name: `Player ${newPlayerId}`, 
+        color: playerColor.color,
+        colorClass: playerColor.colorClass,
+        score: 0 
+      }
+    ]);
+    
+    toast.success(`Added Player ${newPlayerId}`);
+  };
+
+  // Remove the last player
+  const removePlayer = () => {
+    if (players.length <= 2) {
+      toast.warning("Minimum 2 players required!");
+      return;
+    }
+    setPlayers(players.slice(0, -1));
   };
 
   return (
@@ -261,6 +320,48 @@ const MainFeature = () => {
                   <span className="text-lg font-medium w-8 text-center">{gridSize}</span>
                 </div>
                 <p className="text-xs text-surface-500 mt-1">Size: {gridSize}×{gridSize}</p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Players</label>
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-lg font-medium">{players.length}</span>
+                  <div className="flex space-x-1">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={addPlayer}
+                      className="p-1 rounded bg-surface-200 dark:bg-surface-700 hover:bg-surface-300 dark:hover:bg-surface-600 text-surface-700 dark:text-surface-300"
+                      aria-label="Add player"
+                    >
+                      <UserPlusIcon size={18} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={removePlayer}
+                      disabled={players.length <= 2}
+                      className={`p-1 rounded ${
+                        players.length <= 2 
+                          ? 'bg-surface-200 dark:bg-surface-800 text-surface-400 dark:text-surface-600 cursor-not-allowed' 
+                          : 'bg-surface-200 dark:bg-surface-700 hover:bg-surface-300 dark:hover:bg-surface-600 text-surface-700 dark:text-surface-300'
+                      }`}
+                      aria-label="Remove player"
+                    >
+                      <UserMinusIcon size={18} />
+                    </motion.button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {players.map((player, index) => (
+                    <div key={player.id} className="flex items-center space-x-2 p-2 rounded bg-surface-200 dark:bg-surface-700">
+                      <div className={`w-3 h-3 rounded-full bg-${player.color}`}></div>
+                      <span className="text-sm">{player.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-surface-500 mt-1">Add or remove players (2-6)</p>
               </div>
               
               <div className="flex justify-end">
@@ -401,7 +502,7 @@ const MainFeature = () => {
                   } flex justify-between items-center`}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full bg-${player.color}`}></div>
+                    <div className={`w-3 h-3 rounded-full bg-${player.colorClass}`}></div>
                     <span className="font-medium">{player.name}</span>
                   </div>
                   <div className="text-xl font-bold">
@@ -415,9 +516,18 @@ const MainFeature = () => {
               <div className="mt-4 p-3 bg-surface-100 dark:bg-surface-800 rounded-lg text-center">
                 <p className="font-medium text-surface-700 dark:text-surface-300">
                   Game Over! 
-                  {players[0].score === players[1].score 
-                    ? " It's a tie!"
-                    : ` ${players[0].score > players[1].score ? players[0].name : players[1].name} wins!`}
+                  {(() => {
+                    // Find player(s) with highest score
+                    const maxScore = Math.max(...players.map(p => p.score));
+                    const winners = players.filter(p => p.score === maxScore);
+                    
+                    if (winners.length > 1) {
+                      return " It's a tie between " + winners.map(w => w.name).join(", ") + "!";
+                    } else if (winners.length === 1) {
+                      return ` ${winners[0].name} wins!`;
+                    }
+                    return "";
+                  })()}
                 </p>
               </div>
             )}
@@ -426,10 +536,12 @@ const MainFeature = () => {
           {!gameOver && (
             <div className="card">
               <h3 className="text-lg font-semibold mb-2">Current Turn</h3>
-              <div className={`p-3 rounded-lg bg-${players.find(p => p.id === currentPlayer).color}/10 border border-${players.find(p => p.id === currentPlayer).color}/30`}>
+              {players.find(p => p.id === currentPlayer) && (
+              <div className={`p-3 rounded-lg bg-${players.find(p => p.id === currentPlayer).colorClass}/10 border border-${players.find(p => p.id === currentPlayer).colorClass}/30`}>
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-${players.find(p => p.id === currentPlayer).color}`}></div>
-                  <span className="font-medium">{players.find(p => p.id === currentPlayer).name}'s Turn</span>
+                  <div className={`w-3 h-3 rounded-full bg-${players.find(p => p.id === currentPlayer).colorClass}`}></div>
+                  <span className="font-medium">{players.find(p => p.id === currentPlayer)?.name}'s Turn</span>
+                </div>
                 </div>
               </div>
             </div>

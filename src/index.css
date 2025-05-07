@@ -84,6 +84,22 @@
   .line-active-player2 {
     @apply bg-secondary hover:bg-secondary;
   }
+
+  .line-active-player3 {
+    @apply bg-accent hover:bg-accent;
+  }
+
+  .line-active-player4 {
+    @apply bg-emerald-500 hover:bg-emerald-500;
+  }
+
+  .line-active-player5 {
+    @apply bg-violet-500 hover:bg-violet-500;
+  }
+
+  .line-active-player6 {
+    @apply bg-rose-500 hover:bg-rose-500;
+  }
   
   .square-player1 {
     @apply bg-primary/20;
@@ -91,5 +107,13 @@
   
   .square-player2 {
     @apply bg-secondary/20;
+  }
+
+  .square-player3 {
+    @apply bg-accent/20;
+  }
+
+  .square-player4, .square-player5, .square-player6 {
+    @apply bg-surface-400/20;
   }
 }
